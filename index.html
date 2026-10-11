@@ -1,0 +1,409 @@
+<!doctype html><html lang="ja"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><title>古川 空調ピーク監視</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New:wght@500;700&display=swap">
+<style>
+:root{
+  --bg:#f6f7f9; --card:#ffffff; --ln:#dfe3e8; --fg:#1a2129; --mut:#67737f;
+  --act:#c8332e; --prd:#2b6ca8; --warn:#b26a12; --ok:#256b45;
+  --okbg:#e7f2ec; --okln:#b9d9c8; --ngbg:#fbeae9; --ngln:#eec2bf;
+  --grid:#e8ecf0;
+  --disp:"Zen Kaku Gothic New","Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+  --body:-apple-system,BlinkMacSystemFont,"Hiragino Sans","Noto Sans JP",system-ui,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  color-scheme:dark;
+  --bg:#0f151c; --card:#161f29; --ln:#26313d; --fg:#e6edf4; --mut:#8998a6;
+  --act:#e8615a; --prd:#59a8e8; --warn:#e0a13f; --ok:#4fbd84;
+  --okbg:#122a1e; --okln:#1f4b34; --ngbg:#301516; --ngln:#5d2426;
+  --grid:#212b36;
+}}
+:root[data-theme="dark"]{
+  color-scheme:dark;
+  --bg:#0f151c; --card:#161f29; --ln:#26313d; --fg:#e6edf4; --mut:#8998a6;
+  --act:#e8615a; --prd:#59a8e8; --warn:#e0a13f; --ok:#4fbd84;
+  --okbg:#122a1e; --okln:#1f4b34; --ngbg:#301516; --ngln:#5d2426;
+  --grid:#212b36;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--fg);font-family:var(--body);
+  font-size:14px;line-height:1.6;-webkit-font-smoothing:antialiased}
+.page{max-width:1180px;margin:0 auto;padding:16px;padding-block:18px 40px;
+  display:flex;flex-direction:column;gap:14px}
+header{display:flex;align-items:baseline;gap:12px;flex-wrap:wrap}
+h1{font-family:var(--disp);font-weight:700;font-size:19px;margin:0;letter-spacing:.01em}
+.meta{color:var(--mut);font-size:12.5px;font-variant-numeric:tabular-nums}
+.card{background:var(--card);border:1px solid var(--ln);border-radius:12px;padding:16px}
+.banner{border-radius:12px;padding:14px 18px;font-family:var(--disp);font-weight:700;
+  font-size:17px;display:flex;align-items:center;gap:12px;flex-wrap:wrap;line-height:1.45}
+.banner .dot{width:11px;height:11px;border-radius:50%;flex:none}
+.ok{background:var(--okbg);border:1px solid var(--okln);color:var(--ok)}
+.ok .dot{background:var(--ok)}
+.ng{background:var(--ngbg);border:1px solid var(--ngln);color:var(--act)}
+.ng .dot{background:var(--act)}
+.stalewarn{border-radius:10px;padding:10px 14px;font-size:13px;font-weight:500;
+  background:color-mix(in srgb,var(--warn) 14%,transparent);color:var(--warn);
+  border:1px solid color-mix(in srgb,var(--warn) 40%,transparent)}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:14px}
+.kpi .l{color:var(--mut);font-size:12px;letter-spacing:.04em}
+.kpi .v{font-family:var(--disp);font-weight:700;font-size:30px;line-height:1.15;
+  font-variant-numeric:tabular-nums;margin-top:2px}
+.kpi .n{color:var(--mut);font-size:11.5px;margin-top:2px}
+.u{font-size:15px;font-weight:500;color:var(--mut);margin-left:3px}
+.ttl{font-family:var(--disp);font-weight:700;font-size:14.5px}
+.sub{color:var(--mut);font-size:12px}
+.leg{display:flex;gap:15px;flex-wrap:wrap;color:var(--mut);font-size:12px;margin:8px 0 4px}
+.leg i{display:inline-block;width:17px;height:3px;border-radius:2px;vertical-align:middle;margin-right:6px}
+svg{width:100%;height:auto;display:block}
+.tw{overflow-x:auto}
+table{width:100%;border-collapse:collapse}
+th,td{padding:9px 10px;border-bottom:1px solid var(--ln);text-align:right;
+  font-variant-numeric:tabular-nums}
+th{color:var(--mut);font-weight:500;font-size:12px;letter-spacing:.03em}
+th:first-child,td:first-child{text-align:left}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:color-mix(in srgb,var(--prd) 8%,transparent)}
+tbody tr[aria-expanded="true"]{background:color-mix(in srgb,var(--prd) 14%,transparent)}
+tbody tr:focus-visible{outline:2px solid var(--prd);outline-offset:-2px}
+.sw{display:inline-block;width:15px;height:3px;border-radius:2px;vertical-align:middle;margin-right:8px}
+.pill{display:inline-block;padding:1px 8px;border-radius:99px;font-size:11.5px;
+  border:1px solid var(--ln);color:var(--mut)}
+.hint{color:var(--mut);font-size:11.5px}
+footer{color:var(--mut);font-size:11.5px;border-top:1px solid var(--ln);padding-top:12px}
+footer b{color:var(--fg);font-weight:500}
+@media (prefers-reduced-motion:no-preference){.fade{transition:opacity .2s}}
+.ctrl{display:flex;flex-wrap:wrap;gap:8px 14px;align-items:center;font-size:12.5px;color:var(--mut)}
+.ctrl label{display:inline-flex;align-items:center;gap:6px;white-space:nowrap}
+.ctrl input,.ctrl select,.ctrl button{font:inherit;color:var(--fg);background:var(--card);
+  border:1px solid var(--ln);border-radius:8px;padding:5px 8px}
+.ctrl input[type=number]{width:74px;font-variant-numeric:tabular-nums}
+.ctrl input[type=range]{padding:0;width:170px;accent-color:var(--prd)}
+.ctrl button{cursor:pointer;color:var(--mut)}
+.ctrl button:hover{color:var(--fg)}
+.ctrl .sep{width:1px;height:22px;background:var(--ln)}
+.ctrl .grp{display:inline-flex;align-items:center;gap:8px}
+.cfgnote{font-size:11.5px;color:var(--mut);font-variant-numeric:tabular-nums}
+.stalewarn.quiet{background:color-mix(in srgb,var(--mut) 10%,transparent);color:var(--mut);
+  border-color:var(--ln)}
+tbody td{white-space:nowrap}
+.chev{color:var(--prd);font-size:11px;margin-left:6px}
+#subcard{scroll-margin-top:12px}
+.subhd{display:flex;justify-content:space-between;align-items:baseline;gap:10px}
+.close{white-space:nowrap;font:inherit;font-size:12.5px;color:var(--mut);background:none;border:1px solid var(--ln);
+  border-radius:8px;padding:3px 10px;cursor:pointer}
+@media (max-width:520px){.ctrl .sep{display:none} th,td{padding:8px 6px} th{font-size:11.5px}}
+</style>
+
+</head><body><div class="page">
+  <header>
+    <h1>古川 空調ピーク監視</h1>
+    <span class="meta" id="meta">読み込み中…</span>
+  </header>
+
+  <div class="ctrl" role="group" aria-label="表示の設定">
+    <span class="grp">
+      <label>合計のτ <select id="tau" aria-label="4系統合計の予測の分位点（発報に使う）"></select></label>
+      <label>発報線 <input id="alinein" type="number" step="0.5" min="0" max="200" inputmode="decimal"> kW</label>
+      <label title="4系統合計の予測に、予測が指す時刻が 7:00〜23:00 のときだけ上乗せする安全代。深夜と系統別には効かせません。">
+        マージン <input id="marg" type="number" step="0.5" min="0" max="50" inputmode="decimal"> kW</label>
+      <button id="rst" type="button">既定に戻す</button>
+    </span>
+    <span class="sep" aria-hidden="true"></span>
+    <span class="grp">
+      <label>表示 <select id="mode" aria-label="ライブか過去日の再生か"><option value="">ライブ</option></select></label>
+      <span class="grp" id="uptoWrap" hidden>
+        <input id="upto" type="range" min="0" max="95" step="1" value="95" aria-label="再生する時刻">
+        <span id="uptoL" class="meta"></span>
+      </span>
+    </span>
+  </div>
+  <div class="ctrl" id="tauBld" role="group" aria-label="建物ごとのτ"><span class="meta">建物ごとのτ</span></div>
+  <div class="cfgnote" id="cfgnote"></div>
+
+  <div class="banner ok" id="banner"><span class="dot"></span><span id="bantext">読み込み中…</span></div>
+  <div class="stalewarn" id="stalewarn" hidden></div>
+
+  <div class="card"><div class="kpis">
+    <div class="kpi"><div class="l">いまの電力（4系統合計）</div>
+      <div class="v"><span id="actnow">–</span><span class="u">kW</span></div>
+      <div class="n" id="actnown">4台そろった最新の15分</div></div>
+    <div class="kpi"><div class="l">これから30分の山の予測</div>
+      <div class="v" style="color:var(--prd)"><span id="prednow">–</span><span class="u">kW</span></div>
+      <div class="n" id="prednown"></div></div>
+    <div class="kpi"><div class="l">発報線</div>
+      <div class="v" style="color:var(--warn)"><span id="aline">–</span><span class="u">kW</span></div>
+      <div class="n" id="alinen"></div></div>
+  </div></div>
+
+  <div class="card">
+    <div class="ttl">4系統合計</div>
+    <div class="leg">
+      <span><i style="background:var(--act)"></i>実測（15分値・時計に揃えた）</span>
+      <span><i style="background:var(--prd)"></i>予測（これから30分以内の山を、来る時刻に表示）</span>
+      <span><i style="background:color-mix(in srgb,var(--prd) 18%,transparent);height:9px"></i>予測中の30分</span>
+      <span><i style="background:var(--warn);height:0;border-top:2px dashed var(--warn)"></i>発報線</span>
+      <span><i style="background:var(--mut);height:0;border-top:1px dashed var(--mut)"></i>目標</span>
+    </div>
+    <svg id="c1" viewBox="0 0 1160 360" role="img" aria-label="4系統合計の実測と予測"></svg>
+  </div>
+
+  <div class="card" id="subcard" hidden>
+    <div class="subhd"><div class="ttl" id="subttl"></div>
+      <button class="close" id="subclose" type="button">閉じる</button></div>
+    <div class="leg"><span><i style="background:var(--act)"></i>実測</span>
+      <span><i style="background:var(--prd)"></i>予測</span>
+      <span class="sub">時間軸は上の合計と同じ。値は各電力計の計測時刻のまま（最大13分ずれ）</span></div>
+    <svg id="c2" viewBox="0 0 1160 260" role="img" aria-label="選んだ系統の実測と予測"></svg>
+  </div>
+
+  <div class="card">
+    <div class="ttl">系統別のいまの電力（kW）</div>
+    <div class="hint" style="margin:2px 0 8px">系統をタップすると、その系統のグラフが開きます（合計と時間軸を揃えて表示）</div>
+    <div class="tw"><table>
+      <thead><tr><th>系統</th><th>いま</th><th>30分先</th><th>遅延</th></tr></thead>
+      <tbody id="tb"></tbody>
+    </table></div>
+  </div>
+
+  <footer>
+    <b>読み方</b> — 赤が実測の15分値、青が「そこから30分以内に来る山」の予測です。予測は指す時刻の位置に描いてあるので、
+    右端は実測より先まで伸びます。薄く塗った帯が、いま予測している30分です。4台の電力計は計測する分がずれているので、
+    合計は時計の :00・:15・:30・:45 に割り付け直した15分値で表しています。青が橙の破線（発報線）を越えるとバナーが赤になります。<br>
+    <b>発報線について</b> — 既定値は、学習45日で見逃しが0になる値に校正しています（15分値20 kW → 発報線12 kW）。
+    学習に使っていない10日では、見逃し0／18件・発報194回。件数が少ないので保証ではありません。<br>
+    <b>マージン</b> — 合計の予測にだけ、予測する30分が 7:00〜23:00 のときに上乗せします（既定 2.5 kW）。深夜と系統別には乗せません。<br>
+    <b>建物ごとのグラフ</b> — 各電力計の計測時刻のままの15分値と、そこから30分以内の山の予測です（合計より最大13分ずれます）。<br>
+    <b>設定の保存</b> — 合計と建物ごとのτ・発報線・マージンは、この端末のブラウザにだけ保存されます。ほかの人の画面には影響しません。<br>
+    <b>更新</b> — 7:00〜23:00 は15分ごと。深夜（23:00〜7:00）は空調が止まっているので更新を休みます。
+  </footer>
+</div>
+
+<script>
+const BAKED={"ts":"2026-10-11 13:22","ts_iso":"2026-10-11T13:22:00+09:00","daytype":"休日","slots":["00:00","00:15","00:30","00:45","01:00","01:15","01:30","01:45","02:00","02:15","02:30","02:45","03:00","03:15","03:30","03:45","04:00","04:15","04:30","04:45","05:00","05:15","05:30","05:45","06:00","06:15","06:30","06:45","07:00","07:15","07:30","07:45","08:00","08:15","08:30","08:45","09:00","09:15","09:30","09:45","10:00","10:15","10:30","10:45","11:00","11:15","11:30","11:45","12:00","12:15","12:30","12:45","13:00"],"a15":[0.16,0.2,0.04,0.0,0.01,0.0,0.01,0.0,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.01,0.04,0.06,0.1,0.13,0.09,0.1,0.1,0.1,0.04,0.05,0.06,0.04,0.14,0.63,1.73,2.73,3.97,5.35,5.92,5.58,5.39,5.45,5.49,5.51,6.24,8.14,7.28,5.46,9.99,9.63,8.78,9.12,null],"pdec":{"0.5":[null,0.19,0.05,0.03,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.02,0.03,0.0,0.0,0.0,0.04,0.0,0.05,0.3,1.88,3.48,3.65,5.15,4.76,8.06,7.87,8.93,8.8,8.7,8.6,8.56,8.53,8.45,9.63,8.58,8.02,9.42,8.92,9.82,10.71],"0.6":[null,0.26,0.09,0.04,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.06,0.05,0.1,0.06,0.0,0.0,0.0,0.38,0.25,0.22,0.43,2.0,3.76,3.88,5.66,6.56,8.56,8.33,9.08,9.11,9.25,9.24,9.43,9.47,9.37,9.92,8.8,8.14,9.54,9.8,10.5,11.74],"0.65":[null,0.29,0.11,0.04,0.02,0.0,0.01,0.01,0.01,0.01,0.0,0.0,0.01,0.0,0.0,0.0,0.02,0.01,0.0,0.0,0.03,0.06,0.07,0.13,0.07,0.09,0.0,0.0,0.44,0.41,0.4,0.48,2.23,3.95,4.42,6.11,7.39,8.69,8.83,9.84,9.82,9.36,9.51,9.5,9.73,10.04,9.97,8.95,8.32,9.84,9.92,10.8,11.9],"0.7":[null,0.29,0.12,0.05,0.03,0.0,0.03,0.01,0.03,0.03,0.01,0.0,0.01,0.01,0.01,0.02,0.03,0.02,0.04,0.01,0.06,0.11,0.09,0.13,0.1,0.11,0.0,0.0,0.76,0.77,0.41,0.7,2.3,3.96,4.45,6.47,7.39,8.81,9.11,10.22,9.98,9.96,9.95,10.29,9.8,10.23,10.84,9.33,8.43,10.05,10.19,10.83,12.38],"0.8":[null,0.32,0.18,0.07,0.07,0.06,0.05,0.08,0.03,0.06,0.03,0.03,0.02,0.01,0.05,0.24,0.07,0.24,0.07,0.01,0.16,0.13,0.1,0.15,0.12,0.14,0.08,0.28,1.13,1.13,0.95,0.99,2.59,4.7,4.84,6.54,7.69,8.88,9.26,10.39,10.73,11.08,10.97,10.31,9.95,10.54,11.97,9.35,9.04,10.76,10.62,11.58,13.07],"0.9":[null,0.34,0.23,0.12,0.14,0.13,0.08,0.08,0.05,0.09,0.05,0.05,0.16,0.15,0.34,0.35,0.08,0.35,0.08,0.07,0.17,0.13,0.11,0.15,0.19,0.25,0.16,0.41,1.85,1.78,1.56,1.15,2.86,5.09,5.69,6.85,8.34,9.89,9.95,11.34,11.98,11.49,11.69,11.89,11.88,11.77,12.77,12.21,11.8,13.78,12.88,12.97,13.82]},"lag":22,"win":[795,825],"tau":0.8,"target":20.0,"aline":12.0,"act_now":9.12,"pred_now":12.38,"alert":true,"stale_max":12.9,"per":{"EHP-1":{"name":"三越","color":"#7aa7d9","now":3.77,"stale":3.3,"tau":0.65,"actual":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.78,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,3.52,1.41,3.6,3.77],"pred":{"0.5":[0.0,0.0,0.0,0.01,0.0,0.0,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.01,0.01,0.0,0.0,0.0,0.19,0.23,0.22,0.14,0.48,0.47,1.7,0.81,1.81,1.79,1.69,1.74,1.61,1.67,1.49,0.58,1.38,1.49,2.81,2.28],"0.6":[0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.01,0.01,0.01,0.02,0.02,0.01,0.01,0.01,0.03,0.03,0.03,0.03,0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.02,0.04,0.01,0.02,0.03,0.04,0.05,0.21,0.91,0.91,0.91,1.5,1.52,1.73,1.88,1.92,1.92,1.73,1.84,1.79,1.85,1.72,1.34,1.81,1.53,3.11,2.51],"0.65":[0.01,0.01,0.01,0.02,0.03,0.03,0.02,0.02,0.01,0.02,0.02,0.03,0.02,0.02,0.02,0.03,0.03,0.03,0.03,0.02,0.02,0.02,0.02,0.03,0.02,0.03,0.05,0.04,0.03,0.03,0.05,0.06,0.06,0.32,1.56,1.62,1.62,2.43,2.33,1.89,1.9,2.19,1.98,2.06,2.11,2.08,1.87,1.83,1.36,1.81,1.84,3.15,2.86],"0.7":[0.01,0.01,0.01,0.05,0.04,0.04,0.03,0.02,0.02,0.03,0.03,0.05,0.03,0.05,0.05,0.03,0.03,0.03,0.03,0.03,0.06,0.03,0.05,0.06,0.03,0.05,0.06,0.06,0.06,0.05,0.06,0.06,0.06,1.09,1.6,1.67,2.23,2.75,2.83,2.03,2.4,2.81,2.71,2.71,2.73,2.67,2.68,2.56,2.49,2.77,3.33,4.06,3.72],"0.8":[0.05,0.05,0.05,0.06,0.06,0.06,0.04,0.03,0.03,0.06,0.06,0.06,0.05,0.06,0.06,0.05,0.05,0.05,0.06,0.05,0.06,0.05,0.05,0.06,0.05,0.06,0.06,0.07,0.06,0.06,0.07,0.07,0.15,1.4,2.15,2.43,2.47,3.0,2.99,3.07,2.81,3.19,2.85,2.95,2.92,2.74,2.83,2.85,2.56,3.94,4.52,4.94,4.65],"0.9":[0.05,0.05,0.05,0.07,0.07,0.07,0.06,0.06,0.06,0.06,0.06,0.06,0.06,0.07,0.07,0.07,0.07,0.07,0.07,0.06,0.07,0.07,0.06,0.07,0.06,0.26,0.3,0.33,0.39,0.36,0.36,0.36,0.89,1.83,2.19,2.54,3.51,3.57,3.39,3.37,3.86,3.71,3.49,3.5,3.56,3.6,3.42,3.38,3.24,5.07,4.85,6.58,6.77]}},"EHP-14":{"name":"東洋ワークス","color":"#3ea6ff","now":0.0,"stale":12.9,"tau":0.65,"actual":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"pred":{"0.5":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"0.6":[0.0,0.0,0.0,0.0,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"0.65":[0.0,0.0,0.0,0.0,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.01,0.01,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"0.7":[0.01,0.01,0.01,0.01,0.01,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.01,0.0,0.0,0.01,0.01,0.01,0.01,0.0,0.0,0.0,0.01,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0],"0.8":[0.02,0.02,0.01,0.01,0.01,0.04,0.04,0.01,0.01,0.01,0.04,0.03,0.01,0.02,0.02,0.02,0.03,0.02,0.01,0.03,0.02,0.03,0.03,0.02,0.03,0.03,0.03,0.02,0.03,0.03,0.01,0.02,0.02,0.08,0.05,0.1,0.14,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.01,0.01,0.0,0.02,0.02,0.04,0.03,0.01,0.01],"0.9":[0.04,0.04,0.04,0.04,0.04,0.2,0.2,0.05,0.05,0.05,0.04,0.04,0.04,0.04,0.04,0.04,0.03,0.02,0.02,0.03,0.02,0.04,0.05,0.03,0.04,0.04,0.04,0.04,0.04,0.04,0.03,0.05,0.05,0.14,0.27,0.26,0.17,0.13,0.03,0.08,0.02,0.02,0.03,0.02,0.02,0.02,0.05,0.1,0.1,0.1,0.08,0.03,0.02]}},"CPAC-1":{"name":"映画館SC1","color":"#4cc38a","now":3.19,"stale":11.0,"tau":0.65,"actual":[0.14,0.24,0.05,0.0,0.01,0.0,0.01,0.0,0.0,0.01,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.03,0.06,0.08,0.15,0.08,0.1,0.1,0.12,0.04,0.05,0.07,0.02,0.11,0.22,0.18,0.28,1.34,3.14,3.12,3.13,3.11,3.17,3.22,3.28,3.29,3.28,3.26,3.26,3.24,3.23,3.21,3.2,3.19],"pred":{"0.5":[0.13,0.3,0.11,0.02,0.0,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.03,0.05,0.07,0.15,0.06,0.13,0.0,0.16,0.09,0.08,0.15,0.12,0.23,1.68,2.01,2.14,2.92,4.52,3.12,4.65,4.65,4.66,4.67,4.74,4.33,4.26,4.22,4.53,4.28,4.95,4.64,4.66,4.66],"0.6":[0.15,0.3,0.11,0.02,0.01,0.02,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.05,0.06,0.07,0.16,0.08,0.15,0.08,0.17,0.11,0.08,0.26,0.29,0.33,2.13,2.61,2.54,3.39,4.7,3.85,5.99,5.67,5.93,5.96,6.05,5.33,4.82,4.97,5.15,5.22,5.16,5.69,5.68,5.94],"0.65":[0.17,0.3,0.12,0.05,0.01,0.02,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.06,0.06,0.1,0.16,0.09,0.16,0.11,0.24,0.2,0.25,0.27,0.42,0.49,2.33,2.74,2.54,4.98,5.05,3.9,6.94,6.61,6.68,6.55,6.53,6.25,5.83,5.14,5.78,5.42,5.28,5.77,5.95,6.1],"0.7":[0.21,0.3,0.14,0.05,0.02,0.03,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.07,0.07,0.11,0.18,0.13,0.16,0.11,0.45,1.37,1.18,0.42,1.77,0.86,2.58,3.01,2.67,5.07,5.4,4.31,7.44,6.84,6.76,7.26,6.95,6.31,6.07,5.59,5.79,5.5,5.95,5.93,6.18,6.21],"0.8":[0.21,0.34,0.23,0.06,0.02,0.05,0.03,0.02,0.02,0.02,0.02,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.02,0.07,0.08,0.12,0.22,0.13,0.16,0.12,1.97,2.75,3.29,2.25,3.91,1.65,3.22,3.39,2.87,6.81,5.86,4.44,7.46,6.9,7.3,7.37,7.24,6.77,6.41,5.75,5.84,5.8,6.1,6.54,6.81,7.14],"0.9":[0.22,0.38,0.24,0.11,0.05,0.09,0.07,0.03,0.03,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.09,0.15,0.17,0.23,0.13,0.28,0.63,4.82,5.65,4.87,4.17,4.85,4.12,4.79,4.4,6.0,8.07,8.7,4.79,7.78,7.12,7.45,7.41,7.71,7.63,6.56,6.31,6.32,6.54,6.98,6.92,7.03,7.39]}},"CPAC-2":{"name":"映画館SC2","color":"#e8973a","now":2.2,"stale":0.3,"tau":0.65,"actual":[0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.0,0.8,2.18,2.2,2.21,2.22,2.22,2.25,2.27,2.27,2.24,2.22,3.62,6.0,2.22,2.2,6.01,2.99,2.2,2.2],"pred":{"0.5":[0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,1.42,2.74,2.97,3.25,3.62,3.88,5.1,4.81,4.62,4.58,4.81,3.46,1.99,3.68,6.4,2.63,3.51,5.93,5.95],"0.6":[0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.03,1.66,3.95,3.73,4.19,4.39,4.37,5.63,5.32,5.35,5.03,4.93,3.89,2.02,5.31,6.63,3.34,4.51,6.38,6.64],"0.65":[0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.18,2.3,4.03,3.81,4.37,4.83,4.58,5.66,5.4,5.59,5.3,5.02,4.01,2.42,5.4,6.85,3.42,4.56,6.38,6.69],"0.7":[0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.01,0.02,0.02,0.02,0.81,3.03,4.17,4.03,4.99,5.34,4.88,5.67,5.61,5.66,5.46,5.37,4.1,2.66,5.98,7.02,3.68,5.15,6.66,7.01],"0.8":[0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.05,0.05,0.19,1.97,4.31,6.08,5.3,5.29,5.81,5.22,5.93,5.7,5.77,5.79,5.61,4.1,2.83,6.35,7.31,4.43,5.61,6.97,7.64],"0.9":[0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.02,0.55,3.43,3.43,3.01,3.01,5.39,6.89,6.17,6.13,7.06,6.43,6.14,6.55,6.26,6.2,6.16,5.1,4.21,6.49,7.38,4.65,6.01,7.28,7.66]}}}};
+const $=id=>document.getElementById(id);
+const F=(v,d=1)=>(v==null||!isFinite(v))?'–':(+v).toFixed(d);
+const RM=matchMedia('(prefers-reduced-motion: reduce)').matches;
+const ORDER=["EHP-1","EHP-14","CPAC-1","CPAC-2"];
+// 夜間休止の時間帯。外部タイマー（cron-job.org「古川 監視 更新」）の時刻と合わせること。
+const PAUSE_TXT='23:00〜7:00', RESUME_TXT='7:07';
+let LIVE=null, DAY=null, SEL=null, CTL=false, PLOT=null;
+
+// 画面の調整値。localStorageに残すので、現場で決めた設定が次回も生きる（app.py と同じキー・同じ式）。
+// tau=合計（発報）のτ、taus=建物ごとのτ。既定のままの項目は保存しない。
+const DEF={tau:null,aline:null,marg:2.5,taus:{}};
+const fresh=()=>({...DEF,taus:{}});
+let CFG=fresh();
+try{CFG={...fresh(),...JSON.parse(localStorage.getItem('furukawa_cfg')||'{}')}}catch(e){}
+if(!CFG.taus||typeof CFG.taus!=='object') CFG.taus={};
+const saveCfg=()=>{try{localStorage.setItem('furukawa_cfg',JSON.stringify(CFG))}catch(e){}};
+const OP0=7,OP1=23;                    // マージンを効かせる時間帯
+const sl=t=>{const p=t.split(':').map(Number);return p[0]*4+p[1]/15};          // "HH:MM" → 枠番号
+const hm=m=>String(Math.floor(m/60)%24).padStart(2,'0')+':'+String(m%60).padStart(2,'0');
+const inOpSlot=s=>{const m=15*(s+1); return m>=OP0*60 && m<OP1*60};        // 枠 s で予測する30分（s+1, s+2）が 7:00〜23:00 か
+function totalView(d,TQ){           // 合計: 時計に揃えた15分値（実測）と、これから30分以内の山の予測
+  const S=d.slots.map(sl), a15={}, p={};
+  S.forEach((s,j)=>{ if(d.a15&&d.a15[j]!=null) a15[s]=d.a15[j]; });
+  const pd=(d.pdec&&d.pdec[TQ])||[], g=+CFG.marg||0;
+  S.forEach((s,j)=>{ const v=pd[j]; if(v!=null) p[s]=v+(inOpSlot(s)?g:0); });   // 枠 s の判断の予測（描くのは s+2）
+  const u=S[S.length-1], last=Object.keys(a15).map(Number).sort((x,y)=>x-y).pop();
+  return {S,a15,p,u,span:[15*(u+1),15*(u+3)],pnow:(p[u]!=null?p[u]:0),last,act:(last!=null?a15[last]:null)};
+}
+const tauTot=d=>(CFG.tau&&d.pdec&&d.pdec[CFG.tau])?CFG.tau:String(d.tau);
+const tauC=(k,p)=>(CFG.taus[k]&&p.pred[CFG.taus[k]])?CFG.taus[k]:String(p.tau);
+const tauOpts=(sel,pred,def)=>Object.keys(pred).sort((a,b)=>a-b).forEach(q=>{
+  const o=document.createElement('option'); o.value=q; o.textContent=q+(+q===def?'（既定）':''); sel.appendChild(o)});
+const alineOf=d=>(CFG.aline==null||CFG.aline===''||!isFinite(+CFG.aline))?d.aline:+CFG.aline;
+const mode=()=>$('mode').value;        // '' = ライブ
+const cur=()=>mode()?sliceTo(DAY,+$('upto').value):LIVE;
+
+// 横軸は枠の「端」で描く。枠 k は [k, k+1)。15分値は枠の真ん中に点、30分デマンドは2枠ぶんの横線。
+function plot(el,S0,S1,layers,lines,H0,shade){
+  const W=Math.max(300,Math.round(el.getBoundingClientRect().width||1160));
+  const H=Math.round(Math.max(H0*0.6,W*H0/1160));
+  el.setAttribute('viewBox','0 0 '+W+' '+H);
+  const L=W<520?38:52,R=12,T=14,B=28,n=Math.max(1,S1-S0+1);
+  const cs=getComputedStyle(document.documentElement), C=k=>cs.getPropertyValue(k).trim();
+  const vals=[].concat(...layers.map(l=>(l.pts||[]).map(p=>p[1]).concat((l.segs||[]).map(p=>p[2]))),lines.map(l=>l.v))
+    .filter(v=>v!=null&&isFinite(v));
+  const mx=Math.max(1,...vals)*1.1, dg=mx<5?1:0;
+  const xe=k=>L+(W-L-R)*((k-S0)/n), xm=k=>xe(k+0.5), y=v=>H-B-(H-T-B)*(v/mx);
+  let g='';
+  if(shade) g+='<rect x="'+xe(shade[0]).toFixed(1)+'" y="'+T+'" width="'+(xe(shade[1])-xe(shade[0])).toFixed(1)
+    +'" height="'+(H-T-B)+'" fill="'+C('--prd')+'" fill-opacity="0.12"/>';
+  for(let k=0;k<=4;k++){const v=mx*k/4,yy=y(v);
+    g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+yy.toFixed(1)+'" y2="'+yy.toFixed(1)+'" stroke="'+C('--grid')+'"/>'
+     +'<text x="'+(L-9)+'" y="'+(yy+4).toFixed(1)+'" fill="'+C('--mut')+'" font-size="12" text-anchor="end">'+v.toFixed(dg)+'</text>';}
+  const step=Math.max(2,2*Math.ceil(n/2/Math.max(3,Math.floor((W-L-R)/64))));
+  for(let k=S0-(S0%2);k<=S1+1;k+=step) if(k>=S0)
+    g+='<text x="'+xe(k).toFixed(1)+'" y="'+(H-9)+'" fill="'+C('--mut')+'" font-size="11" text-anchor="middle">'+hm(15*k)+'</text>';
+  lines.forEach(l=>{const c=C(l.c);
+    g+='<line x1="'+L+'" x2="'+(W-R)+'" y1="'+y(l.v).toFixed(1)+'" y2="'+y(l.v).toFixed(1)+'" stroke="'+c
+      +'" stroke-width="'+(l.w||2)+'" stroke-dasharray="'+(l.d||'7 5')+'"/>'
+      +'<text x="'+(W-R)+'" y="'+(y(l.v)-7).toFixed(1)+'" fill="'+c+'" font-size="11" text-anchor="end">'+l.t+'</text>';});
+  layers.forEach(l=>{const c=C(l.c), op=l.op||1, w=l.w||2.3;
+    if(l.pts){ let dp='',prev=null;           // 折れ線（途切れはつながない）
+      l.pts.forEach(([k,v])=>{ if(v==null){prev=null;return}
+        dp+=(prev!=null&&k===prev+1?'L':'M')+xm(k+(l.sh||0)).toFixed(1)+' '+y(v).toFixed(1); prev=k; });
+      g+='<path d="'+dp+'" fill="none" stroke="'+c+'" stroke-opacity="'+op+'" stroke-width="'+w+'" stroke-linejoin="round"/>'; }
+    if(l.segs){ let dp='',pe=null,py=null;   // 30分ごとの横線（隣り合う枠は縦線でつなぐ）
+      l.segs.sort((a,b)=>a[0]-b[0]).forEach(([k0,k1,v])=>{
+        dp+=(pe===k0?'V'+y(v).toFixed(1):'M'+xe(k0).toFixed(1)+' '+y(v).toFixed(1))+'H'+xe(k1).toFixed(1); pe=k1; py=v; });
+      g+='<path d="'+dp+'" fill="none" stroke="'+c+'" stroke-opacity="'+op+'" stroke-width="'+w+'"/>'; }
+    if(l.dots) l.dots.forEach(([k,v])=>{ g+='<circle cx="'+xe(k).toFixed(1)+'" cy="'+y(v).toFixed(1)+'" r="3.4" fill="'+C(l.dc||l.c)+'"/>'; });
+    if(l.end) g+='<circle cx="'+xm(l.end[0]).toFixed(1)+'" cy="'+y(l.end[1]).toFixed(1)+'" r="4.5" fill="'+c+'"/>';
+  });
+  el.innerHTML=g;
+}
+function initCtl(d){                   // τ/発報線/マージン（サーバに問い合わせず即反映）
+  if(CTL) return; CTL=true;
+  tauOpts($('tau'),d.pdec,d.tau);
+  $('tau').value=tauTot(d);
+  ORDER.filter(k=>d.per&&d.per[k]).forEach(k=>{      // 建物ごとのτ
+    const p=d.per[k], lab=document.createElement('label'), sel=document.createElement('select');
+    sel.id='tau-'+k; sel.setAttribute('aria-label',p.name+'の予測の分位点');
+    tauOpts(sel,p.pred,p.tau); sel.value=tauC(k,p);
+    sel.onchange=()=>{ if(sel.value===String(p.tau)) delete CFG.taus[k]; else CFG.taus[k]=sel.value;
+      saveCfg(); render() };
+    lab.append(p.name+' ',sel); $('tauBld').appendChild(lab);
+  });
+  $('alinein').value=alineOf(d);
+  $('marg').value=CFG.marg;
+  $('tau').onchange=()=>{const v=$('tau').value; CFG.tau=(v===String(d.tau))?null:v; saveCfg(); render()};
+  $('alinein').oninput=()=>{const v=$('alinein').value;
+    CFG.aline=(v===''||!isFinite(+v)||+v<0)?null:+v;saveCfg();render()};
+  $('marg').oninput=()=>{const v=+$('marg').value;
+    CFG.marg=(isFinite(v)&&v>=0)?v:0;saveCfg();render()};
+  $('rst').onclick=()=>{CFG=fresh();saveCfg();const b=cur()||d;
+    $('tau').value=String(b.tau);$('alinein').value=b.aline;$('marg').value=DEF.marg;
+    ORDER.forEach(k=>{const s=$('tau-'+k); if(s&&b.per[k]) s.value=String(b.per[k].tau)});
+    render()};
+}
+
+function render(){
+  const d=cur(); if(!d||!d.slots){ if(!mode()) offline('まだデータが届いていません'); return }
+  initCtl(d);
+  const TQ=tauTot(d), AL=alineOf(d), rp=!!mode();
+  const V=totalView(d,TQ), pnow=V.pnow, alert=pnow>=AL, wtxt=hm(V.span[0])+'〜'+hm(V.span[1]);
+  $('meta').textContent=(rp?'再生 ':'')+d.ts+'　'+d.daytype
+    +(!rp&&d.stale_max!=null?'　最大遅延 '+F(d.stale_max,0)+' 分':'');
+  $('actnow').textContent=F(V.act);
+  $('actnown').textContent=V.last!=null?hm(15*V.last)+'〜'+hm(15*V.last+15)+' の15分（4台そろった最新）':'まだありません';
+  $('prednow').textContent=F(pnow); $('prednown').textContent=wtxt+' の15分値の山';
+  $('aline').textContent=F(AL);
+  $('alinen').textContent=(CFG.aline==null)?'15分値 '+F(d.target,0)+' kW 超えに相当'
+                                          :'手動で設定（既定 '+F(d.aline)+' kW）';
+  const custom=CFG.tau!=null||CFG.aline!=null||(+CFG.marg||0)!==DEF.marg||Object.keys(CFG.taus).length>0;
+  const bld=ORDER.filter(k=>d.per&&d.per[k]).map(k=>d.per[k].name+' '+tauC(k,d.per[k])).join('・');
+  $('cfgnote').textContent='この端末の設定：合計τ '+TQ+'・発報線 '+F(AL)+' kW・マージン '+F(+CFG.marg||0)
+    +' kW（7〜23時のみ）／建物 '+bld+(custom?'':'　［既定］');
+  $('banner').className='banner '+(alert?'ng':'ok');
+  $('bantext').textContent=alert
+    ? (rp?'この時点で ':'')+wtxt+' に15分値が '+F(d.target,0)+' kW を超える見込み（予測 '+F(pnow)+' kW）'
+    : '正常 — '+wtxt+' の15分値の山の予測 '+F(pnow)+' kW（発報線 '+F(AL)+' kW）';
+  const S0=V.S[0], S1=V.u+2, P=Object.keys(V.p).map(Number);
+  plot($('c1'),S0,S1,[
+      {pts:P.map(s=>[s,V.p[s]]),sh:2,c:'--prd',w:2.3,dots:P.filter(s=>V.p[s]>=AL).map(s=>[s+2.5,V.p[s]]),dc:'--warn'},
+      {pts:V.S.map(s=>[s,V.a15[s]!=null?V.a15[s]:null]),c:'--act',w:2.5},
+      ...(V.last!=null?[{c:'--act',end:[V.last,V.act]}]:[])],
+    [{v:AL,c:'--warn',t:'発報線 '+F(AL),alert:true},
+     {v:d.target,c:'--mut',t:'目標 '+F(d.target,0),w:1,d:'4 4'}],360,[V.u+1,V.u+3]);
+  PLOT={S0,S1};
+  const tb=$('tb'); tb.innerHTML='';
+  ORDER.filter(k=>d.per&&d.per[k]).forEach(k=>{
+    // マージンは発報（合計）の安全代なので系統別には乗せない（止まっている系統が平らな線になるため）
+    const p=d.per[k], pv=p.pred[tauC(k,p)]||[], open=SEL===k;
+    const tr=document.createElement('tr');
+    tr.tabIndex=0; tr.setAttribute('role','button'); tr.setAttribute('aria-expanded',open?'true':'false');
+    tr.innerHTML='<td><i class="sw" style="background:'+(p.color||'var(--prd)')+'"></i>'+p.name
+      +'<span class="chev" aria-hidden="true">'+(open?'▲':'▼')+'</span></td>'
+      +'<td>'+F(p.now)+'</td><td>'+F(pv.length?pv[pv.length-1]:null)+'</td>'
+      +'<td>'+(rp||p.stale==null?'<span class="pill">–</span>':F(p.stale,0)+' 分前')+'</td>';
+    tr.onclick=()=>toggle(k);
+    tr.onkeydown=e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();toggle(k)}};
+    tb.appendChild(tr);
+  });
+  const sc=$('subcard');
+  if(SEL&&d.per&&d.per[SEL]){
+    const p=d.per[SEL];
+    sc.hidden=false; $('subttl').textContent=p.name+'（単独・τ '+tauC(SEL,p)+'）';
+    const S=d.slots.map(sl), pv=p.pred[tauC(SEL,p)]||[];
+    plot($('c2'),PLOT.S0,PLOT.S1,[
+        {pts:S.map((s,j)=>[s+2,pv[j]!=null?pv[j]:null]),c:'--prd',w:2.3},
+        {pts:S.map((s,j)=>[s,(p.actual||[])[j]]),c:'--act',w:2.5}],[],260);
+  } else sc.hidden=true;
+  staleCheck();
+}
+function toggle(k){
+  SEL=(SEL===k?null:k); render();
+  // スマホでは表がページ下にあり、グラフはその上に開くので、開いたら見える位置まで動かす
+  if(SEL) $('subcard').scrollIntoView({behavior:RM?'auto':'smooth',block:'start'});
+}
+$('subclose').onclick=()=>{const k=SEL; SEL=null; render();
+  const rows=[...$('tb').children], i=ORDER.filter(x=>cur()&&cur().per[x]).indexOf(k);
+  if(rows[i]) rows[i].focus({preventScroll:true});};
+
+function sliceTo(d,upto){              // 再生のスライダー（その時点で見えていた分だけ残す）
+  if(!d||!d.slots) return null;
+  let n=d.slots.findIndex(t=>sl(t)>upto);
+  n=n<0?d.slots.length:Math.max(1,n);
+  const cut=a=>(a||[]).slice(0,n), cp=o=>{const r={};for(const q in o)r[q]=cut(o[q]);return r};
+  const per={};
+  for(const c in d.per) per[c]={...d.per[c],actual:cut(d.per[c].actual),pred:cp(d.per[c].pred),
+    now:(d.per[c].actual||[])[n-1]||0,stale:null};
+  const a15=cut(d.a15); if(n<d.slots.length) a15[n-1]=null;   // 判断枠そのものの揃えた値は、その時点ではまだ無い
+  return {...d,slots:cut(d.slots),a15,pdec:cp(d.pdec),per,ts:d.ts.slice(0,10)+' '+d.slots[n-1],stale_max:null};
+}
+const slotLbl=v=>String(Math.floor(v/4)).padStart(2,'0')+':'+String((v%4)*15).padStart(2,'0');
+$('mode').onchange=async()=>{
+  const r=mode(); $('uptoWrap').hidden=!r;
+  if(r){
+    DAY=null;
+    try{const x=await fetch('days/'+r+'.json?t='+Date.now(),{cache:'no-store'}); if(x.ok) DAY=await x.json();}catch(e){}
+    if(!DAY||!DAY.slots){ offline(r+' のデータを読めませんでした'); return }
+    const p=DAY.slots[DAY.slots.length-1].split(':').map(Number);
+    $('upto').value=p[0]*4+p[1]/15; $('uptoL').textContent=slotLbl(+$('upto').value);
+  }
+  render();
+};
+$('upto').oninput=()=>{$('uptoL').textContent=slotLbl(+$('upto').value);render()};
+
+async function fillDays(){
+  try{
+    const r=await fetch('days/index.json?t='+Date.now(),{cache:'no-store'}); if(!r.ok) return;
+    const today=LIVE?LIVE.ts.slice(0,10):'';
+    const W='日月火水木金土';
+    (await r.json()).filter(d=>d!==today).sort().reverse().forEach(d=>{
+      const o=document.createElement('option'); o.value=d;
+      o.textContent='再生 '+d.slice(5).replace('-','/')+'（'+W[new Date(d+'T12:00:00+09:00').getDay()]+'）';
+      $('mode').appendChild(o);
+    });
+  }catch(e){}
+}
+
+function jstMin(){const t=new Date(Date.now()+9*3600e3);return t.getUTCHours()*60+t.getUTCMinutes()}
+function staleCheck(){
+  const el=$('stalewarn');
+  if(mode()||!LIVE||!LIVE.ts_iso){el.hidden=true;return}
+  const age=(Date.now()-Date.parse(LIVE.ts_iso))/60000, t=jstMin();
+  const night=t>=22*60+55||t<7*60+30;
+  if(age>40&&night){el.hidden=false;el.className='stalewarn quiet';
+    el.textContent='深夜（'+PAUSE_TXT+'）は更新を休んでいます。次の更新は '+RESUME_TXT+' ごろです';}
+  else if(age>40){el.hidden=false;el.className='stalewarn';
+    el.textContent='最終更新から'+Math.round(age)+'分たっています。自動更新が止まっている可能性があります';}
+  else el.hidden=true;
+}
+function offline(msg){
+  $('banner').className='banner ng'; $('bantext').textContent=msg;
+}
+async function poll(){
+  try{
+    const r=await fetch('data.json?t='+Date.now(),{cache:'no-store'});
+    if(r.ok){const v=await r.json();
+      if(v&&v.slots&&(!LIVE||v.ts!==LIVE.ts)){LIVE=v; if(!mode()) render();}}
+  }catch(e){}
+  if(!mode()) staleCheck();
+}
+if(typeof BAKED!=="undefined"&&BAKED&&BAKED.slots){LIVE=BAKED;render();}
+else offline('まだデータが届いていません');
+fillDays(); poll(); setInterval(poll,60000);
+let rz; addEventListener('resize',()=>{clearTimeout(rz);rz=setTimeout(render,150)});
+</script>
+</body></html>
